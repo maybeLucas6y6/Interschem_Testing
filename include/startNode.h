@@ -7,7 +7,9 @@ struct StartNode {
 	char* label;
 	int fontSize, padding;
 	float x, y, width, height; // TODO: float or int?
+
 	Pin outPin;
+	Pin* toPin;
 };
 
 StartNode* NewStartNode(int padding, int fontSize, float x, float y);

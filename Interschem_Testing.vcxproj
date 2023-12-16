@@ -155,6 +155,7 @@
     <ClCompile Include="src\decisionNode.cpp" />
     <ClCompile Include="src\link.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\pin.cpp" />
     <ClCompile Include="src\readNode.cpp" />
     <ClCompile Include="src\startNode.cpp" />
     <ClCompile Include="src\stopNode.cpp" />

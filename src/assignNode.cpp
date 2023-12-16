@@ -21,10 +21,17 @@ AssignNode* NewAssignNode(int padding, int fontSize, float x, float y) {
 	p->inPin.x = 0.0f;
 	p->inPin.y = 0.0f;
 	p->inPin.radius = PIN_RADIUS;
+	p->inPin.owner = p;
+	p->inPin.ownerType = assign;
+
 	p->outPin.id = 0;
 	p->outPin.x = 0.0f;
 	p->outPin.y = 0.0f;
 	p->outPin.radius = PIN_RADIUS;
+	p->outPin.owner = p;
+	p->outPin.ownerType = assign;
+
+	p->toPin = nullptr;
 
 	SetAssignNodePosition(p, x, y);
 	SetAssignNodeSize(p, padding, fontSize);
@@ -58,4 +65,5 @@ void DrawAssignNode(AssignNode* node) {
 	DrawText(node->label, node->x + node->padding, node->y + node->padding, node->fontSize, BLACK);
 	DrawCircle(node->inPin.x, node->inPin.y, node->inPin.radius, GRAY);
 	DrawCircle(node->outPin.x, node->outPin.y, node->outPin.radius, GRAY);
+	DrawLink(node->outPin, node->toPin);
 }

@@ -21,14 +21,25 @@ DecisionNode* NewDecisionNode(int padding, int fontSize, float x, float y) {
 	p->inPin.x = 0.0f;
 	p->inPin.y = 0.0f;
 	p->inPin.radius = PIN_RADIUS;
+	p->inPin.owner = p;
+	p->inPin.ownerType = decision;
+
 	p->outPinTrue.id = 0;
 	p->outPinTrue.x = 0.0f;
 	p->outPinTrue.y = 0.0f;
 	p->outPinTrue.radius = PIN_RADIUS;
+	p->outPinTrue.owner = p;
+	p->outPinTrue.ownerType = decision;
+
 	p->outPinFalse.id = 0;
 	p->outPinFalse.x = 0.0f;
 	p->outPinFalse.y = 0.0f;
 	p->outPinFalse.radius = PIN_RADIUS;
+	p->outPinFalse.owner = p;
+	p->outPinFalse.ownerType = decision;
+
+	p->toPinTrue = nullptr;
+	p->toPinFalse = nullptr;
 
 	SetDecisionNodePosition(p, x, y);
 	SetDecisionNodeSize(p, padding, fontSize);
@@ -69,4 +80,6 @@ void DrawDecisionNode(DecisionNode* node) {
 	DrawCircle(node->inPin.x, node->inPin.y, node->inPin.radius, GRAY);
 	DrawCircle(node->outPinTrue.x, node->outPinTrue.y, node->outPinTrue.radius, GRAY);
 	DrawCircle(node->outPinFalse.x, node->outPinFalse.y, node->outPinFalse.radius, GRAY);
+	DrawLink(node->outPinTrue, node->toPinTrue);
+	DrawLink(node->outPinFalse, node->toPinFalse);
 }

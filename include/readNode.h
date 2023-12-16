@@ -7,8 +7,10 @@ struct ReadNode {
 	char* label;
 	int fontSize, padding;
 	float x, y, width, height;
+
 	Pin inPin;
 	Pin outPin;
+	Pin* toPin;
 
 	int* myVar;
 };

@@ -2,6 +2,7 @@
 
 #include "raylib.h"
 #include <cstring>
+#include <iostream>
 
 WriteNode* NewWriteNode(int padding, int fontSize, float x, float y) {
 	WriteNode* p = new WriteNode;
@@ -21,10 +22,19 @@ WriteNode* NewWriteNode(int padding, int fontSize, float x, float y) {
 	p->inPin.x = 0.0f;
 	p->inPin.y = 0.0f;
 	p->inPin.radius = PIN_RADIUS;
+	p->inPin.owner = p;
+	p->inPin.ownerType = write;
+
 	p->outPin.id = 0;
 	p->outPin.x = 0.0f;
 	p->outPin.y = 0.0f;
 	p->outPin.radius = PIN_RADIUS;
+	p->outPin.owner = p;
+	p->outPin.ownerType = write;
+
+	p->toPin = nullptr;
+
+	p->myVar = nullptr;
 
 	SetWriteNodePosition(p, x, y);
 	SetWriteNodeSize(p, padding, fontSize);
@@ -58,4 +68,8 @@ void DrawWriteNode(WriteNode* node) {
 	DrawText(node->label, node->x + node->padding, node->y + node->padding, node->fontSize, WHITE);
 	DrawCircle(node->inPin.x, node->inPin.y, node->inPin.radius, GRAY);
 	DrawCircle(node->outPin.x, node->outPin.y, node->outPin.radius, GRAY);
+	DrawLink(node->outPin, node->toPin);
+}
+void WriteValue(WriteNode* node) {
+	std::cout << *(node->myVar);
 }

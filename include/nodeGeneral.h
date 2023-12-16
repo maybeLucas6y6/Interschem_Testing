@@ -1,7 +1,6 @@
 #pragma once
 
 enum NodeType {
-	none,
 	start,
 	read,
 	write,

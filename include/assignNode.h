@@ -7,8 +7,12 @@ struct AssignNode {
 	char* label;
 	int fontSize, padding;
 	float x, y, width, height;
+
 	Pin inPin;
 	Pin outPin;
+	Pin* toPin;
+
+	// TODO: var and expr
 };
 
 AssignNode* NewAssignNode(int padding, int fontSize, float x, float y);

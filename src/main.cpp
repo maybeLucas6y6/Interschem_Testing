@@ -3,6 +3,10 @@
 #include "nodeComponents.h"
 #include "uiComponents.h"
 #include "execFunc.h"
+#include "link.h"
+
+#include <iostream>
+using namespace std;
 
 int main() {
 	InitWindow(1020, 800, "Interschem");
@@ -10,25 +14,29 @@ int main() {
 	NodeInfo cNode;
 	cNode.id = -1;
 	cNode.index = -1;
-	cNode.type = none;
+	cNode.type = start;
 
 	NodeArrays nodes;
 
 	NewNode(nodes, start, 5, 20, 500, 100);
 	NewNode(nodes, read, 5, 20, 500, 200);
 	//NewNode(nodes, decision, 5, 20, 500, 300);
-	//NewNode(nodes, write, 5, 20, 700, 400);
 	//NewNode(nodes, assign, 5, 20, 300, 400);
+	NewNode(nodes, write, 5, 20, 700, 400);
 	NewNode(nodes, stop, 5, 20, 500, 500);
 
-	NodeLinks links;
-	NewLink(links, nodes.startNode->outPin, { nodes.startNode->id, 0, start }, nodes.readNodes[0]->inPin, { nodes.readNodes[0]->id, nodes.readNodes[0]->index, read });
-	NewLink(links, nodes.readNodes[0]->outPin, { nodes.readNodes[0]->id, nodes.readNodes[0]->index, read }, nodes.stopNodes[0]->inPin, { nodes.stopNodes[0]->id, nodes.stopNodes[0]->index, stop });
-	//NewLink(links, nodes.readNodes[0]->outPin, nodes.decisionNodes[0]->inPin);
-	//NewLink(links, nodes.decisionNodes[0]->outPinTrue, nodes.assignNodes[0]->inPin);
-	//NewLink(links, nodes.decisionNodes[0]->outPinFalse, nodes.writeNodes[0]->inPin);
-	//NewLink(links, nodes.assignNodes[0]->outPin, nodes.stopNodes[0]->inPin);
-	//NewLink(links, nodes.writeNodes[0]->outPin, nodes.stopNodes[0]->inPin);
+	/*void* ptr = nullptr;
+	ptr = nodes.readNodes[0];
+	cout << ((ReadNode*)ptr)->id;*/ // TODO: 
+
+	NewLink(nodes.startNode->toPin, nodes.readNodes[0]->inPin);
+	NewLink(nodes.readNodes[0]->toPin, nodes.writeNodes[0]->inPin);
+	NewLink(nodes.writeNodes[0]->toPin, nodes.stopNodes[0]->inPin);
+
+	int x = 2;
+	nodes.readNodes[0]->myVar = &x;
+	nodes.writeNodes[0]->myVar = &x;
+	//Execute(nodes);
 
 	SetTargetFPS(60);
 	while (!WindowShouldClose()) {
@@ -74,9 +82,6 @@ int main() {
 		}
 		for (auto p : nodes.decisionNodes) {
 			DrawDecisionNode(p);
-		}
-		for (unsigned i = 0; i < links.nLinks; i++) {
-			DrawLink(links.vec[i]);
 		}
 
 		EndDrawing();
