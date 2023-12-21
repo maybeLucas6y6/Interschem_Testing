@@ -141,7 +141,6 @@
     <ClInclude Include="include\decisionNode.h" />
     <ClInclude Include="include\execFunc.h" />
     <ClInclude Include="include\fileFunc.h" />
-    <ClInclude Include="include\link.h" />
     <ClInclude Include="include\nodeGeneral.h" />
     <ClInclude Include="include\pin.h" />
     <ClInclude Include="include\readNode.h" />
@@ -153,13 +152,20 @@
   <ItemGroup>
     <ClCompile Include="src\assignNode.cpp" />
     <ClCompile Include="src\decisionNode.cpp" />
-    <ClCompile Include="src\link.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\pin.cpp" />
     <ClCompile Include="src\readNode.cpp" />
     <ClCompile Include="src\startNode.cpp" />
     <ClCompile Include="src\stopNode.cpp" />
     <ClCompile Include="src\writeNode.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes" />
+    <None Include=".gitignore" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="LICENSE.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

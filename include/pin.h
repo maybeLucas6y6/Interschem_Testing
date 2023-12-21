@@ -7,7 +7,7 @@
 #include "nodeGeneral.h"
 
 enum PinType {
-	input, 
+	input,
 	output
 };
 
@@ -22,3 +22,4 @@ struct Pin {
 };
 
 void DrawLink(Pin& from, Pin* to);
+void NewLink(Pin*& destination, Pin& source);
