@@ -153,6 +153,7 @@
     <ClCompile Include="src\assignNode.cpp" />
     <ClCompile Include="src\decisionNode.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\nodeComponents.cpp" />
     <ClCompile Include="src\pin.cpp" />
     <ClCompile Include="src\readNode.cpp" />
     <ClCompile Include="src\startNode.cpp" />

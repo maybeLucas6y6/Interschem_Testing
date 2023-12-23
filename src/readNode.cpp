@@ -20,6 +20,7 @@ ReadNode* NewReadNode(int padding, int fontSize, float x, float y) {
 	p->height = 0.0f;
 
 	p->inPin.id = 0;
+	p->inPin.type = input;
 	p->inPin.x = 0.0f;
 	p->inPin.y = 0.0f;
 	p->inPin.radius = PIN_RADIUS;
@@ -27,6 +28,7 @@ ReadNode* NewReadNode(int padding, int fontSize, float x, float y) {
 	p->inPin.ownerType = read;
 
 	p->outPin.id = 0;
+	p->outPin.type = output;
 	p->outPin.x = 0.0f;
 	p->outPin.y = 0.0f;
 	p->outPin.radius = PIN_RADIUS;

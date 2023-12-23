@@ -10,17 +10,30 @@ using namespace std;
 int main() {
 	InitWindow(1020, 800, "Interschem");
 
-	NodeInfo cNode;
-	cNode.id = -1;
-	cNode.index = -1;
-	cNode.type = start;
+	AnyNodeType dragNode{ nullptr, noType };
+	AnyNodeType selectedNode{ nullptr, noType };
+	Pin* selectedPin = nullptr;
+	bool editing = false;
+	bool drawGhostLink = false;
+
+	Button* createReadNode = NewButton();
+	SetButtonColors(createReadNode, YELLOW, BLACK);
+	SetButtonPosition(createReadNode, 5, 40);
+	SetButtonLabel(createReadNode, "New Read Node", 20, 5);
+
+	Button* del = NewButton();
+	SetButtonColors(del, RED, WHITE);
+	SetButtonLabel(del, "Delete", 16, 5);
+	Button* edit = NewButton();
+	SetButtonColors(edit, BLUE, WHITE);
+	SetButtonLabel(edit, "Edit", 16, 5);
 
 	Button* exec = NewButton();
 	SetButtonColors(exec, GREEN, BLACK);
 	SetButtonPosition(exec, 5, 5);
 	SetButtonLabel(exec, "Execute", 20, 5);
-	string input = "";
-	string output = "";
+	string inputString = "";
+	string outputString = "";
 
 	NodeArrays nodes;
 	NewNode(nodes, start, 5, 20, 500, 100);
@@ -30,13 +43,12 @@ int main() {
 	NewNode(nodes, write, 5, 20, 700, 400);
 	NewNode(nodes, stop, 5, 20, 500, 500);
 
-	NewLink(nodes.startNode->toPin, nodes.readNodes[0]->inPin);
+	/*NewLink(nodes.startNode->toPin, nodes.readNodes[0]->inPin);
 	NewLink(nodes.readNodes[0]->toPin, nodes.writeNodes[0]->inPin);
-	NewLink(nodes.writeNodes[0]->toPin, nodes.stopNodes[0]->inPin);
+	NewLink(nodes.writeNodes[0]->toPin, nodes.stopNodes[0]->inPin);*/
 
 	ExecutionState state = notExecuting;
-	void* currentNode = nodes.startNode;
-	NodeType currentNodeType = start;
+	AnyNodeType currentNode{ nodes.startNode, start };
 
 	int x = 2;
 	nodes.readNodes[0]->myVar = &x;
@@ -48,27 +60,75 @@ int main() {
 
 		int mx = GetMouseX(), my = GetMouseY();
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-			GetClickedNodeID(cNode, mx, my, nodes);
-		}
-		else if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			if (cNode.id != -1) {
-				switch (cNode.type) {
-				case start: SetStartNodePosition(nodes.startNode, mx, my); break;
-				case read: SetReadNodePosition(nodes.readNodes[cNode.index], mx, my); break;
-				case write: SetWriteNodePosition(nodes.writeNodes[cNode.index], mx, my); break;
-				case assign: SetAssignNodePosition(nodes.assignNodes[cNode.index], mx, my); break;
-				case decision: SetDecisionNodePosition(nodes.decisionNodes[cNode.index], mx, my); break;
-				case stop: SetStopNodePosition(nodes.stopNodes[cNode.index], mx, my); break;
-				default: break;
+			if (!editing) {
+				GetClickedNode(dragNode, mx, my, nodes);
+			}
+
+			//selectedNode = { nullptr, noType };
+			//selectedPin = nullptr;
+			//editing = false;
+			//drawGhostLink = false;
+
+			if (!drawGhostLink) {
+				GetClickedPin(selectedPin, mx, my, nodes);
+				if (editing && selectedPin != nullptr) {
+					selectedNode.address = selectedPin->owner;
+					selectedNode.type = selectedPin->ownerType;
+					editing = true;
+					drawGhostLink = true;
+				}
+				else {
+					drawGhostLink = false;
+				}
+			}
+			else {
+				Pin* secondPin = nullptr;
+				GetClickedPin(secondPin, mx, my, nodes);
+				if (secondPin != nullptr && secondPin->type == input && selectedPin != nullptr) {
+					switch (selectedPin->ownerType) {
+					case start: NewLink(((StartNode*)selectedPin->owner)->toPin, *secondPin); break;
+					case read: NewLink(((ReadNode*)selectedPin->owner)->toPin, *secondPin); break;
+					case write: NewLink(((WriteNode*)selectedPin->owner)->toPin, *secondPin); break;
+					case assign: NewLink(((AssignNode*)selectedPin->owner)->toPin, *secondPin); break;
+					case decision:
+						if(secondPin == &((DecisionNode*)selectedPin->owner)->outPinTrue)
+							NewLink(((DecisionNode*)selectedPin->owner)->toPinTrue, *secondPin);
+						else 
+							NewLink(((DecisionNode*)selectedPin->owner)->toPinFalse, *secondPin);
+						break;
+					default: break;
+					}
+					selectedPin = nullptr;
+					drawGhostLink = false;
 				}
 			}
 		}
+		else if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+			DragNode(dragNode, mx, my);
+		}
 		else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-			cNode.id = -1;
+			dragNode = { nullptr, noType }; // TODO: performance?
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+			GetClickedNode(selectedNode, mx, my, nodes);
+			if (selectedNode.address == nullptr) {
+				editing = false;
+				selectedPin = nullptr;
+				drawGhostLink = false;
+			}
+		}
+
+		if (IsButtonClicked(createReadNode)) {
+			NewNode(nodes, read, 5, 20, mx, my);
+			dragNode = { nodes.readNodes[nodes.readNodes.size() - 1], read };
+		}
+		if (selectedNode.address != nullptr && IsButtonClicked(edit)) {
+			editing = true;
 		}
 
 		if (IsButtonClicked(exec)) {
-			GetNextNodeInExecution(currentNode, currentNodeType, state);
+			GetNextNodeInExecution(currentNode, state);
 		}
 
 		if (state == notExecuting) {
@@ -78,55 +138,65 @@ int main() {
 			cout << "Waiting for input\n";
 			char c = GetCharPressed();
 			if (c != 0 && (c >= '0' && c <= '9')) {
-				input.insert(input.end(), c);
+				inputString.insert(inputString.end(), c);
 			}
 
 			if (IsKeyPressed(KEY_ENTER)) {
-				x = stoi(input);
-				SetValue((ReadNode*)currentNode, x);
-				GetNextNodeInExecution(currentNode, currentNodeType, state);
+				x = stoi(inputString);
+				SetValue((ReadNode*)currentNode.address, x);
+				GetNextNodeInExecution(currentNode, state);
 			}
 		}
 		else if (state == processing) {
 			cout << "Processing\n";
-			if (currentNodeType == write) {
-				WriteValue((WriteNode*)currentNode);
+			if (currentNode.type == write) {
+				WriteValue((WriteNode*)currentNode.address);
 			}
-			GetNextNodeInExecution(currentNode, currentNodeType, state);
+			GetNextNodeInExecution(currentNode, state);
 		}
 		else {
 			cout << "Done\n";
 			state = notExecuting;
-			output = "Result: " + to_string(*nodes.writeNodes[0]->myVar);
+			outputString = "Result: " + to_string(*nodes.writeNodes[0]->myVar);
 		}
 
 		BeginDrawing();
 		// render on screen
 		ClearBackground(BLACK);
 
-		DrawStartNode(nodes.startNode);
-		for (StopNode* p : nodes.stopNodes) {
-			DrawStopNode(p);
+		if (drawGhostLink) {
+			DrawGhostLink(selectedPin, mx, my);
 		}
-		for (ReadNode* p : nodes.readNodes) {
-			DrawReadNode(p);
+		if (selectedNode.address != nullptr) {
+			DrawSelectedNodeOptions(selectedNode, del, edit);
 		}
-		for (WriteNode* p : nodes.writeNodes) {
-			DrawWriteNode(p);
+
+		DrawNodes(nodes);
+
+		DrawButton(createReadNode);
+
+		string debug1 = "";
+		debug1 += "Editing: ";
+		debug1 += (editing ? "true" : "false");
+		debug1 += " - Ghost link: ";
+		debug1 += (drawGhostLink ? "true" : "false");
+		DrawText(debug1.c_str(), 5, 400, 20, WHITE);
+
+		if (selectedPin != nullptr) {
+			string debug2 = "";
+			debug2 += to_string(selectedPin->x);
+			debug2 += " ";
+			debug2 += to_string(selectedPin->y);
+			DrawText(debug2.c_str(), 5, 450, 20, WHITE);
 		}
-		for (AssignNode* p : nodes.assignNodes) {
-			DrawAssignNode(p);
-		}
-		for (DecisionNode* p : nodes.decisionNodes) {
-			DrawDecisionNode(p);
-		}
+
 		DrawButton(exec);
 
 		if (state == waitingForInput) {
-			DrawText(input.c_str(), 5, 35, 20, WHITE);
+			DrawText(inputString.c_str(), 5, 35, 20, WHITE);
 		}
-		else if (!output.empty()) {
-			DrawText(output.c_str(), 5, 35, 20, WHITE);
+		else if (!outputString.empty()) {
+			DrawText(outputString.c_str(), 5, 35, 20, WHITE);
 		}
 
 		EndDrawing();
