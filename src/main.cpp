@@ -7,14 +7,23 @@
 #include <iostream>
 using namespace std;
 
+enum EditorState {
+	EditorStateNormal,
+	EditorStateSelectedNode,
+	EditorStateAddingNode, // TODO:
+	EditorStateEditingNode,
+	EditorStateAddingLink,
+	EditorStateEditingLink // TODO:
+};
+
 int main() {
 	InitWindow(1020, 800, "Interschem");
 
 	AnyNodeType dragNode{ nullptr, noType };
 	AnyNodeType selectedNode{ nullptr, noType };
 	Pin* selectedPin = nullptr;
-	bool editing = false;
-	bool drawGhostLink = false;
+
+	EditorState edState = EditorStateNormal;
 
 	Button* createReadNode = NewButton();
 	SetButtonColors(createReadNode, YELLOW, BLACK);
@@ -60,28 +69,20 @@ int main() {
 
 		int mx = GetMouseX(), my = GetMouseY();
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-			if (!editing) {
+			if (edState == EditorStateNormal) {
 				GetClickedNode(dragNode, mx, my, nodes);
 			}
 
-			//selectedNode = { nullptr, noType };
-			//selectedPin = nullptr;
-			//editing = false;
-			//drawGhostLink = false;
-
-			if (!drawGhostLink) {
+			if (edState == EditorStateEditingNode) {
 				GetClickedPin(selectedPin, mx, my, nodes);
-				if (editing && selectedPin != nullptr) {
-					selectedNode.address = selectedPin->owner;
+				if (selectedPin != nullptr && selectedPin->type == output) {
+					selectedNode.address = selectedPin->owner; //TODO: this should not be necessary
 					selectedNode.type = selectedPin->ownerType;
-					editing = true;
-					drawGhostLink = true;
-				}
-				else {
-					drawGhostLink = false;
+
+					edState = EditorStateAddingLink;
 				}
 			}
-			else {
+			else if(edState == EditorStateAddingLink){
 				Pin* secondPin = nullptr;
 				GetClickedPin(secondPin, mx, my, nodes);
 				if (secondPin != nullptr && secondPin->type == input && selectedPin != nullptr) {
@@ -99,7 +100,7 @@ int main() {
 					default: break;
 					}
 					selectedPin = nullptr;
-					drawGhostLink = false;
+					edState = EditorStateEditingNode;
 				}
 			}
 		}
@@ -112,19 +113,21 @@ int main() {
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
 			GetClickedNode(selectedNode, mx, my, nodes);
-			if (selectedNode.address == nullptr) {
-				editing = false;
-				selectedPin = nullptr;
-				drawGhostLink = false;
+			if (selectedNode.address != nullptr) {
+				edState = EditorStateSelectedNode;
 			}
+			else {
+				edState = EditorStateNormal;
+			}
+		}
+
+		if (selectedNode.address != nullptr && IsButtonClicked(edit)) {
+			edState = EditorStateEditingNode;
 		}
 
 		if (IsButtonClicked(createReadNode)) {
 			NewNode(nodes, read, 5, 20, mx, my);
 			dragNode = { nodes.readNodes[nodes.readNodes.size() - 1], read };
-		}
-		if (selectedNode.address != nullptr && IsButtonClicked(edit)) {
-			editing = true;
 		}
 
 		if (IsButtonClicked(exec)) {
@@ -164,39 +167,23 @@ int main() {
 		// render on screen
 		ClearBackground(BLACK);
 
-		if (drawGhostLink) {
+		if (edState == EditorStateAddingLink) {
 			DrawGhostLink(selectedPin, mx, my);
 		}
-		if (selectedNode.address != nullptr) {
+		if (edState == EditorStateSelectedNode || edState == EditorStateEditingNode|| edState == EditorStateAddingLink) {
 			DrawSelectedNodeOptions(selectedNode, del, edit);
 		}
 
 		DrawNodes(nodes);
 
+		DrawButton(exec);
 		DrawButton(createReadNode);
 
-		string debug1 = "";
-		debug1 += "Editing: ";
-		debug1 += (editing ? "true" : "false");
-		debug1 += " - Ghost link: ";
-		debug1 += (drawGhostLink ? "true" : "false");
-		DrawText(debug1.c_str(), 5, 400, 20, WHITE);
-
-		if (selectedPin != nullptr) {
-			string debug2 = "";
-			debug2 += to_string(selectedPin->x);
-			debug2 += " ";
-			debug2 += to_string(selectedPin->y);
-			DrawText(debug2.c_str(), 5, 450, 20, WHITE);
-		}
-
-		DrawButton(exec);
-
 		if (state == waitingForInput) {
-			DrawText(inputString.c_str(), 5, 35, 20, WHITE);
+			DrawText(inputString.c_str(), 100, 5, 20, WHITE);
 		}
 		else if (!outputString.empty()) {
-			DrawText(outputString.c_str(), 5, 35, 20, WHITE);
+			DrawText(outputString.c_str(), 100, 5, 20, WHITE);
 		}
 
 		EndDrawing();
