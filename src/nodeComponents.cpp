@@ -58,7 +58,9 @@ void NewNode(NodeArrays& nodes, NodeType type, int padding, int fontSize, float 
 	}
 }
 void DrawNodes(NodeArrays& nodes) {
-	DrawStartNode(nodes.startNode);
+	if (nodes.startNode != nullptr) {
+		DrawStartNode(nodes.startNode);
+	}
 	for (StopNode* p : nodes.stopNodes) {
 		DrawStopNode(p);
 	}

@@ -11,10 +11,12 @@ enum ExecutionState {
 };
 
 void GetClickedNode(AnyNodeType& clickedNode, int mx, int my, NodeArrays& nodes) {
-	if (mx >= nodes.startNode->x && mx <= nodes.startNode->x + nodes.startNode->width && my >= nodes.startNode->y && my <= nodes.startNode->y + nodes.startNode->height) {
-		clickedNode.address = nodes.startNode;
-		clickedNode.type = start;
-		return;
+	if (nodes.startNode != nullptr) {
+		if (mx >= nodes.startNode->x && mx <= nodes.startNode->x + nodes.startNode->width && my >= nodes.startNode->y && my <= nodes.startNode->y + nodes.startNode->height) {
+			clickedNode.address = nodes.startNode;
+			clickedNode.type = start;
+			return;
+		}
 	}
 	for (unsigned i = 0; i < nodes.readNodes.size(); i++) {
 		if (mx >= nodes.readNodes[i]->x && mx <= nodes.readNodes[i]->x + nodes.readNodes[i]->width && my >= nodes.readNodes[i]->y && my <= nodes.readNodes[i]->y + nodes.readNodes[i]->height) {
