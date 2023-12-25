@@ -21,5 +21,6 @@ struct NodeArrays {
 	std::vector<DecisionNode*> decisionNodes;
 };
 
-void NewNode(NodeArrays& nodes, NodeType type, int padding, int fontSize, float x, float y);
+AnyNodeType NewNode(NodeArrays& nodes, NodeType type, int padding, int fontSize, float x, float y);
 void DrawNodes(NodeArrays& nodes);
+void CleanupNodes(NodeArrays& nodes);

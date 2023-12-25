@@ -25,25 +25,6 @@ int main() {
 
 	EditorState edState = EditorStateNormal;
 
-	Button* createStartNode = NewButton();
-	SetButtonColors(createStartNode, DARKGREEN, WHITE);
-	SetButtonLabel(createStartNode, "New Start Node", 20, 5);
-	Button* createReadNode = NewButton();
-	SetButtonColors(createReadNode, YELLOW, BLACK);
-	SetButtonLabel(createReadNode, "New Read Node", 20, 5);
-	Button* createWriteNode = NewButton();
-	SetButtonColors(createWriteNode, BLUE, WHITE);
-	SetButtonLabel(createWriteNode, "New Write Node", 20, 5);
-	Button* createAssignNode = NewButton();
-	SetButtonColors(createAssignNode, ORANGE, BLACK);
-	SetButtonLabel(createAssignNode, "New Assign Node", 20, 5);
-	Button* createDecisionNode = NewButton();
-	SetButtonColors(createDecisionNode, PURPLE, WHITE);
-	SetButtonLabel(createDecisionNode, "New Decision Node", 20, 5);
-	Button* createStopNode = NewButton();
-	SetButtonColors(createStopNode, RED, WHITE);
-	SetButtonLabel(createStopNode, "New Stop Node", 20, 5);
-
 	Button* del = NewButton();
 	SetButtonColors(del, RED, WHITE);
 	SetButtonLabel(del, "Delete", 16, 5);
@@ -61,28 +42,65 @@ int main() {
 	NodeArrays nodes;
 
 	ExecutionState state = notExecuting;
-	AnyNodeType currentNode{ nodes.startNode, start };
+	AnyNodeType currentNode{ nullptr, noType };
 
+	Button* createStartNode = NewButton();
+	SetButtonColors(createStartNode, { 0, 100, 32, 255 }, WHITE);
+	SetButtonLabel(createStartNode, "New Start Node", 20, 5);
+	Button* createReadNode = NewButton();
+	SetButtonColors(createReadNode, { 210,100,100,255 }, WHITE);
+	SetButtonLabel(createReadNode, "New Read Node", 20, 5);
+	Button* createWriteNode = NewButton();
+	SetButtonColors(createWriteNode, { 0,121,255,255 }, WHITE);
+	SetButtonLabel(createWriteNode, "New Write Node", 20, 5);
+	Button* createAssignNode = NewButton();
+	SetButtonColors(createAssignNode, { 20,200,200,255 }, WHITE);
+	SetButtonLabel(createAssignNode, "New Assign Node", 20, 5);
+	Button* createDecisionNode = NewButton();
+	SetButtonColors(createDecisionNode, { 80,20,200,255 }, WHITE);
+	SetButtonLabel(createDecisionNode, "New Decision Node", 20, 5);
+	Button* createStopNode = NewButton();
+	SetButtonColors(createStopNode, { 155, 40, 60, 255 }, WHITE);
+	SetButtonLabel(createStopNode, "New Stop Node", 20, 5);
 	Window* createNodes = NewWindow();
-	SetWindowColor(createNodes, DARKGRAY);
-	SetWindowPosition(createNodes, 300, 300);
-	AddElementToWindow(createNodes, { (void*)createStartNode, WindowElementTypeButton });
-	AddElementToWindow(createNodes, { (void*)createReadNode, WindowElementTypeButton });
-	AddElementToWindow(createNodes, { (void*)createWriteNode, WindowElementTypeButton });
-	AddElementToWindow(createNodes, { (void*)createAssignNode, WindowElementTypeButton });
-	AddElementToWindow(createNodes, { (void*)createDecisionNode, WindowElementTypeButton });
-	AddElementToWindow(createNodes, { (void*)createStopNode, WindowElementTypeButton });
+	SetWindowColor(createNodes, { 66, 66, 66, 255 });
+	SetWindowPosition(createNodes, 5, 40);
 	SetWindowSpacing(createNodes, 5.0f);
 	SetWindowPadding(createNodes, 5.0f);
+	AddElementToWindow(createNodes, { createStartNode, WindowElementTypeButton });
+	AddElementToWindow(createNodes, { createReadNode, WindowElementTypeButton });
+	AddElementToWindow(createNodes, { createWriteNode, WindowElementTypeButton });
+	AddElementToWindow(createNodes, { createAssignNode, WindowElementTypeButton });
+	AddElementToWindow(createNodes, { createDecisionNode, WindowElementTypeButton });
+	AddElementToWindow(createNodes, { createStopNode, WindowElementTypeButton });
+
+	Dictionary* dict = NewDictionary();
+	SetDictionaryPosition(dict, 100, 100);
+	DictionaryRow* r1 = NewDictionaryRow();
+	SetDictionaryRowData(r1, "abc", 1, 20, 5);
+	DictionaryRow* r2 = NewDictionaryRow();
+	SetDictionaryRowData(r2, "ab", 1, 20, 5);
+	DictionaryRow* r3 = NewDictionaryRow();
+	SetDictionaryRowData(r3, "abd", 1, 20, 5);
+	AddDictionaryRow(dict, r1);
+	AddDictionaryRow(dict, r2);
+	AddDictionaryRow(dict, r3);
+	SetDictionaryPadding(dict, 5);
+	SetDictionarySpacing(dict, 5);
+	Window* variables = NewWindow();
+	SetWindowColor(variables, { 66, 66, 66, 255 });
+	SetWindowPosition(variables, 5, 300);
+	SetWindowSpacing(variables, 5.0f);
+	SetWindowPadding(variables, 5.0f);
+	AddElementToWindow(variables, { dict, WindowElementTypeDictionary });
 
 	SetTargetFPS(60);
 	while (!WindowShouldClose()) {
 		// update data
 		int mx = GetMouseX(), my = GetMouseY();
 
-		if (IsKeyPressed(KEY_F)) {
-			SetWindowPosition(createNodes, mx, my);
-		}
+		DragWindow(createNodes);
+		DragWindow(variables);
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			if (edState == EditorStateNormal) {
@@ -145,28 +163,22 @@ int main() {
 			GetNextNodeInExecution(currentNode, state);
 		}
 		if (IsButtonClicked(createStartNode)) {
-			NewNode(nodes, start, 5, 20, mx, my);
-			dragNode = { nodes.startNode, start };
+			currentNode = dragNode = NewNode(nodes, start, 5, 20, mx, my);
 		}
 		if (IsButtonClicked(createReadNode)) {
-			NewNode(nodes, read, 5, 20, mx, my);
-			dragNode = { nodes.readNodes[nodes.readNodes.size() - 1], read };
+			dragNode = NewNode(nodes, read, 5, 20, mx, my);
 		}
 		if (IsButtonClicked(createWriteNode)) {
-			NewNode(nodes, write, 5, 20, mx, my);
-			dragNode = { nodes.writeNodes[nodes.writeNodes.size() - 1], write };
+			dragNode = NewNode(nodes, write, 5, 20, mx, my);
 		}
 		if (IsButtonClicked(createAssignNode)) {
-			NewNode(nodes, assign, 5, 20, mx, my);
-			dragNode = { nodes.assignNodes[nodes.assignNodes.size() - 1], assign };
+			dragNode = NewNode(nodes, assign, 5, 20, mx, my);
 		}
 		if (IsButtonClicked(createDecisionNode)) {
-			NewNode(nodes, decision, 5, 20, mx, my);
-			dragNode = { nodes.decisionNodes[nodes.decisionNodes.size() - 1], decision };
+			dragNode = NewNode(nodes, decision, 5, 20, mx, my);
 		}
 		if (IsButtonClicked(createStopNode)) {
-			NewNode(nodes, stop, 5, 20, mx, my);
-			dragNode = { nodes.stopNodes[nodes.stopNodes.size() - 1], stop };
+			dragNode = NewNode(nodes, stop, 5, 20, mx, my);
 		}
 
 		if (state == notExecuting) {
@@ -200,9 +212,10 @@ int main() {
 
 		BeginDrawing();
 		// render on screen
-		ClearBackground(BLACK);
+		ClearBackground({ 33, 33, 33 });
 
 		DrawWindow(createNodes);
+		DrawWindow(variables);
 
 		if (edState == EditorStateAddingLink) {
 			DrawGhostLink(selectedPin, mx, my);
@@ -225,6 +238,7 @@ int main() {
 		EndDrawing();
 	}
 
+	CleanupNodes(nodes);
 	CloseWindow();
 	return 0;
 }

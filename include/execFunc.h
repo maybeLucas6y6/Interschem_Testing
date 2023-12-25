@@ -60,6 +60,7 @@ void GetClickedNode(AnyNodeType& clickedNode, int mx, int my, NodeArrays& nodes)
 void GetNextNodeInExecution(AnyNodeType& currentNode, ExecutionState& state) {
 	if (currentNode.address == nullptr || currentNode.type == noType) {
 		state = done; // TODO: add error variant
+		return;
 	}
 
 	switch (currentNode.type) {
