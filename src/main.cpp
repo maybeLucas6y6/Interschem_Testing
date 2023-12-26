@@ -27,16 +27,16 @@ int main() {
 
 	Button* del = NewButton();
 	SetButtonColors(del, RED, WHITE);
-	SetButtonLabel(del, "Delete", 16, 5);
+	SetButtonLabel(del, "X", 16, 5);
 	Button* edit = NewButton();
 	SetButtonColors(edit, BLUE, WHITE);
-	SetButtonLabel(edit, "Edit", 16, 5);
+	SetButtonLabel(edit, "E", 16, 5);
 
 	Button* exec = NewButton();
 	SetButtonColors(exec, GREEN, BLACK);
 	SetButtonPosition(exec, 5, 5);
 	SetButtonLabel(exec, "Execute", 20, 5);
-	string inputString = "";
+	string inBuffer = "";
 	string outputString = "";
 
 	NodeArrays nodes;
@@ -79,9 +79,9 @@ int main() {
 	DictionaryRow* r1 = NewDictionaryRow();
 	SetDictionaryRowData(r1, "abc", 1, 20, 5);
 	DictionaryRow* r2 = NewDictionaryRow();
-	SetDictionaryRowData(r2, "ab", 1, 20, 5);
+	SetDictionaryRowData(r2, "ab", 44, 20, 5);
 	DictionaryRow* r3 = NewDictionaryRow();
-	SetDictionaryRowData(r3, "abd", 1, 20, 5);
+	SetDictionaryRowData(r3, "abd", 3, 20, 5);
 	AddDictionaryRow(dict, r1);
 	AddDictionaryRow(dict, r2);
 	AddDictionaryRow(dict, r3);
@@ -93,11 +93,57 @@ int main() {
 	SetWindowSpacing(variables, 5.0f);
 	SetWindowPadding(variables, 5.0f);
 	AddElementToWindow(variables, { dict, WindowElementTypeDictionary });
+	DictionaryRowHalf rhalf = { DictionaryRowHalfType_None, nullptr };
+	DictionaryRow* selectedRow = nullptr;
 
-	SetTargetFPS(60);
+	SetTargetFPS(120);
 	while (!WindowShouldClose()) {
+		//double t = GetTime();
+
+		if (rhalf.type == DictionaryRowHalfType_Key) {
+			char c = GetCharPressed();
+			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+				inBuffer += c;
+			}
+			if (IsKeyPressed(KEY_ENTER)) {
+				int find = FindKeyInDictionary(dict, inBuffer); // TODO: do it internally?
+				if (find == -1) {
+					SetDictionaryRowKey(selectedRow, inBuffer);
+					inBuffer.clear();
+					rhalf = { DictionaryRowHalfType_None, nullptr };
+					selectedRow = nullptr;
+				}
+			}
+			if (IsKeyPressed(KEY_BACKSPACE) && !inBuffer.empty()) {
+				inBuffer.erase(inBuffer.end());
+			}
+		}
+		else if (rhalf.type == DictionaryRowHalfType_Value) {
+			char c = GetCharPressed();
+			if (c >= '0' && c <= '9') {
+				inBuffer += c;
+			}
+			if (IsKeyPressed(KEY_ENTER)) {
+				int find = FindKeyInDictionary(dict, inBuffer); // TODO: do it internally?
+				if (find == -1) {
+					SetDictionaryRowValue(selectedRow, stoi(inBuffer));
+					inBuffer.clear();
+					rhalf = { DictionaryRowHalfType_None, nullptr };
+					selectedRow = nullptr;
+				}
+			}
+			if (IsKeyPressed(KEY_BACKSPACE) && !inBuffer.empty()) {
+				inBuffer.erase(inBuffer.end());
+			}
+		}
+		
 		// update data
 		int mx = GetMouseX(), my = GetMouseY();
+
+		if (IsDictionaryRowClicked(dict)) {
+			selectedRow = GetClickedDictionaryRow(dict);
+			rhalf = GetClickedDictionaryRowHalf(selectedRow);
+		}
 
 		DragWindow(createNodes);
 		DragWindow(variables);
@@ -126,7 +172,7 @@ int main() {
 					case write: NewLink(((WriteNode*)selectedPin->owner)->toPin, *secondPin); break;
 					case assign: NewLink(((AssignNode*)selectedPin->owner)->toPin, *secondPin); break;
 					case decision:
-						if(secondPin == &((DecisionNode*)selectedPin->owner)->outPinTrue)
+						if(selectedPin == &((DecisionNode*)selectedPin->owner)->outPinTrue)
 							NewLink(((DecisionNode*)selectedPin->owner)->toPinTrue, *secondPin);
 						else 
 							NewLink(((DecisionNode*)selectedPin->owner)->toPinFalse, *secondPin);
@@ -158,6 +204,11 @@ int main() {
 		if (selectedNode.address != nullptr && IsButtonClicked(edit)) {
 			edState = EditorStateEditingNode;
 		}
+		if (selectedNode.address != nullptr && IsButtonClicked(del)) {
+			EraseNode(nodes, selectedNode);
+			selectedNode = { nullptr, noType };
+			edState = EditorStateNormal;
+		}
 
 		if (IsButtonClicked(exec)) {
 			GetNextNodeInExecution(currentNode, state);
@@ -188,11 +239,11 @@ int main() {
 			cout << "Waiting for input\n";
 			char c = GetCharPressed();
 			if (c != 0 && (c >= '0' && c <= '9')) {
-				inputString.insert(inputString.end(), c);
+				inBuffer.insert(inBuffer.end(), c);
 			}
 
 			if (IsKeyPressed(KEY_ENTER)) {
-				//x = stoi(inputString);
+				//x = stoi(inBuffer);
 				//SetValue((ReadNode*)currentNode.address, x);
 				GetNextNodeInExecution(currentNode, state);
 			}
@@ -228,14 +279,30 @@ int main() {
 
 		DrawButton(exec);
 
+		if (selectedRow != nullptr) {
+			int inBufX = selectedRow->dict->window->x + selectedRow->dict->window->width + 5, inBufY = selectedRow->y + selectedRow->padding;
+			int inBufW = MeasureText(inBuffer.c_str(), 20);
+			if (inBuffer.empty()) {
+				string placeholder = "Input here...";
+				DrawRectangle(inBufX, inBufY, MeasureText(placeholder.c_str(), 20), 20, {11, 11, 11, 155});
+				DrawText(placeholder.c_str(), inBufX, inBufY, 20, WHITE);
+			}
+			else {
+				DrawRectangle(inBufX, inBufY, inBufW, 20, { 11, 11, 11, 155 });
+				DrawText(inBuffer.c_str(), inBufX, inBufY, 20, WHITE);
+			}
+		}
+
 		if (state == waitingForInput) {
-			DrawText(inputString.c_str(), 100, 5, 20, WHITE);
+			DrawText(inBuffer.c_str(), 100, 5, 20, WHITE);
 		}
 		else if (!outputString.empty()) {
 			DrawText(outputString.c_str(), 100, 5, 20, WHITE);
 		}
 
 		EndDrawing();
+		//t = GetTime() - t;
+		//cout << t << "\n";
 	}
 
 	CleanupNodes(nodes);
