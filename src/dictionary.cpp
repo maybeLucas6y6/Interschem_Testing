@@ -60,6 +60,10 @@ DictionaryRowHalf GetClickedDictionaryRowHalf(DictionaryRow* drow) {
 		return { DictionaryRowHalfType_Value, &drow->value };
 	}*/
 }
+void ResizeDictionaryRow(DictionaryRow* drow) {
+	drow->width = 2 * drow->padding + MeasureText(drow->key.c_str(), drow->fontSize) + MeasureText(std::to_string(drow->value).c_str(), drow->fontSize) + 10;
+	ResizeDictionary(drow->dict);
+}
 void SetDictionaryRowKey(DictionaryRow* drow, std::string key) {
 	int oldKeyWidth = MeasureText(drow->key.c_str(), drow->fontSize);
 	int newKeyWidth = MeasureText(key.c_str(), drow->fontSize);
@@ -198,6 +202,23 @@ DictionaryRow* GetClickedDictionaryRow(Dictionary* dict) {
 	for (DictionaryRow* r : dict->rows) {
 		if (IsDictionaryRowClicked(r)) {
 			return r;
+		}
+	}
+	return nullptr;
+}
+DictionaryRow* GetDictionaryRow(Dictionary* dict, std::string key) {
+	size_t n = dict->rows.size();
+	int left = 0, right = n - 1;
+	while (left <= right) {
+		int middle = (left + right) / 2;
+		if (key.compare(dict->rows[middle]->key) < 0) {
+			right = middle - 1;
+		}
+		else if (key.compare(dict->rows[middle]->key) > 0) {
+			left = middle + 1;
+		}
+		else {
+			return dict->rows[middle];
 		}
 	}
 	return nullptr;

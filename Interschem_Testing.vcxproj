@@ -146,6 +146,7 @@
     <ClInclude Include="include\nodeGeneral.h" />
     <ClInclude Include="include\pin.h" />
     <ClInclude Include="include\readNode.h" />
+    <ClInclude Include="include\singlelinetext.h" />
     <ClInclude Include="include\startNode.h" />
     <ClInclude Include="include\stopNode.h" />
     <ClInclude Include="include\uiComponents.h" />
@@ -162,6 +163,7 @@
     <ClCompile Include="src\nodeComponents.cpp" />
     <ClCompile Include="src\pin.cpp" />
     <ClCompile Include="src\readNode.cpp" />
+    <ClCompile Include="src\singlelinetext.cpp" />
     <ClCompile Include="src\startNode.cpp" />
     <ClCompile Include="src\stopNode.cpp" />
     <ClCompile Include="src\window.cpp" />

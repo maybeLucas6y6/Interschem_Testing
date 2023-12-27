@@ -37,6 +37,9 @@ ReadNode* NewReadNode(int padding, int fontSize, float x, float y) {
 
 	p->toPin = nullptr;
 
+	p->myVarValue = nullptr;
+	p->myVarName = nullptr;
+
 	SetReadNodePosition(p, x, y);
 	SetReadNodeSize(p, padding, fontSize);
 
@@ -71,6 +74,10 @@ void DrawReadNode(ReadNode* node) {
 	DrawCircle(node->outPin.x, node->outPin.y, node->outPin.radius, GRAY);
 	DrawLink(node->outPin, node->toPin);
 }
-void SetValue(ReadNode* node, int x) {
-	*(node->myVar) = x;
+void LinkReadNodeVar(ReadNode* node, std::string* name, int* val) {
+	node->myVarName = name;
+	node->myVarValue = val;
+}
+void SetReadNodeVarValue(ReadNode* node, int x) {
+	*(node->myVarValue) = x;
 }

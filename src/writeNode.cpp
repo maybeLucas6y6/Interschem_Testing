@@ -36,7 +36,7 @@ WriteNode* NewWriteNode(int padding, int fontSize, float x, float y) {
 
 	p->toPin = nullptr;
 
-	p->myVar = nullptr;
+	p->myVarValue = nullptr;
 
 	SetWriteNodePosition(p, x, y);
 	SetWriteNodeSize(p, padding, fontSize);
@@ -72,6 +72,9 @@ void DrawWriteNode(WriteNode* node) {
 	DrawCircle(node->outPin.x, node->outPin.y, node->outPin.radius, GRAY);
 	DrawLink(node->outPin, node->toPin);
 }
-void WriteValue(WriteNode* node) {
-	std::cout << *(node->myVar);
+void LinkWriteNodeVar(WriteNode* node, int* x) {
+	node->myVarValue = x;
+}
+int GetWriteNodeVarValue(WriteNode* node) {
+	return *node->myVarValue;
 }

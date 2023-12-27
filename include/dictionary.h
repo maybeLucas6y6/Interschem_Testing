@@ -42,6 +42,7 @@ void SetDictionaryRowColors(DictionaryRow* drow, Color bgColor, Color fontColor)
 bool IsDictionaryRowHovered(DictionaryRow* drow);
 bool IsDictionaryRowClicked(DictionaryRow* drow);
 DictionaryRowHalf GetClickedDictionaryRowHalf(DictionaryRow* drow);
+void ResizeDictionaryRow(DictionaryRow* drow);
 void SetDictionaryRowKey(DictionaryRow* drow, std::string key);
 void SetDictionaryRowValue(DictionaryRow* drow, int value);
 void DrawDictionaryRow(DictionaryRow* drow);
@@ -55,6 +56,7 @@ bool IsDictionaryHovered(Dictionary* dict);
 bool IsDictionaryClicked(Dictionary* dict);
 bool IsDictionaryRowClicked(Dictionary* dict);
 DictionaryRow* GetClickedDictionaryRow(Dictionary* dict);
+DictionaryRow* GetDictionaryRow(Dictionary* dict, std::string key);
 void SetDictionaryPadding(Dictionary* dict, int padding);
 void SetDictionarySpacing(Dictionary* dict, int spacing);
 void ReorderDictionary(Dictionary* dict, int index);

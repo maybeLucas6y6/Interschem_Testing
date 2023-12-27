@@ -13,7 +13,8 @@ enum EditorState {
 	EditorStateAddingNode, // TODO:
 	EditorStateEditingNode,
 	EditorStateAddingLink,
-	EditorStateEditingLink // TODO:
+	EditorStateEditingLink, // TODO:
+	EditorStateLinkingVariable
 };
 
 int main() {
@@ -31,6 +32,9 @@ int main() {
 	Button* edit = NewButton();
 	SetButtonColors(edit, BLUE, WHITE);
 	SetButtonLabel(edit, "E", 16, 5);
+	Button* linkVar = NewButton();
+	SetButtonColors(linkVar, PURPLE, WHITE);
+	SetButtonLabel(linkVar, "L", 16, 5);
 
 	Button* exec = NewButton();
 	SetButtonColors(exec, GREEN, BLACK);
@@ -96,53 +100,76 @@ int main() {
 	DictionaryRowHalf rhalf = { DictionaryRowHalfType_None, nullptr };
 	DictionaryRow* selectedRow = nullptr;
 
+	SingleLineText* inputLine = NewSingleLineText();
+	SetSingleLineTextColors(inputLine, RAYWHITE, DARKGRAY);
+	SetSingleLineTextFontSize(inputLine, 20);
+	SetSingleLineTextPadding(inputLine, 5);
+	SetSingleLineTextPosition(inputLine, 300, 5);
+
 	SetTargetFPS(120);
 	while (!WindowShouldClose()) {
 		//double t = GetTime();
 
-		if (rhalf.type == DictionaryRowHalfType_Key) {
-			char c = GetCharPressed();
-			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-				inBuffer += c;
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+			if (IsSingleLineTextClicked(inputLine)) {
+				// TODO: should also have an 'active' variable
+				inputLine->focused = true;
 			}
-			if (IsKeyPressed(KEY_ENTER)) {
-				int find = FindKeyInDictionary(dict, inBuffer); // TODO: do it internally?
-				if (find == -1) {
-					SetDictionaryRowKey(selectedRow, inBuffer);
-					inBuffer.clear();
-					rhalf = { DictionaryRowHalfType_None, nullptr };
-					selectedRow = nullptr;
-				}
-			}
-			if (IsKeyPressed(KEY_BACKSPACE) && !inBuffer.empty()) {
-				inBuffer.erase(inBuffer.end());
+			else {
+				inputLine->focused = false;
 			}
 		}
-		else if (rhalf.type == DictionaryRowHalfType_Value) {
+		if (IsSingleLineTextFocused(inputLine)) {
 			char c = GetCharPressed();
-			if (c >= '0' && c <= '9') {
-				inBuffer += c;
+			if (rhalf.type == DictionaryRowHalfType_Key && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+				InsertCharSingleLineText(inputLine, c);
+			}
+			else if (rhalf.type == DictionaryRowHalfType_Value && (c >= '0' && c <= '9')) {
+				InsertCharSingleLineText(inputLine, c);
 			}
 			if (IsKeyPressed(KEY_ENTER)) {
-				int find = FindKeyInDictionary(dict, inBuffer); // TODO: do it internally?
-				if (find == -1) {
-					SetDictionaryRowValue(selectedRow, stoi(inBuffer));
-					inBuffer.clear();
+				if (rhalf.type == DictionaryRowHalfType_Key) {
+					int find = FindKeyInDictionary(dict, inputLine->str); // TODO: do it internally?
+					if (find == -1) {
+						SetDictionaryRowKey(selectedRow, inputLine->str);
+						rhalf = { DictionaryRowHalfType_None, nullptr };
+						selectedRow = nullptr;
+						inputLine->focused = false;
+					}
+				}
+				else if (rhalf.type == DictionaryRowHalfType_Value) {
+					SetDictionaryRowValue(selectedRow, stoi(inputLine->str));
 					rhalf = { DictionaryRowHalfType_None, nullptr };
 					selectedRow = nullptr;
+					inputLine->focused = false;
 				}
+				ClearStrSingleLineText(inputLine);
 			}
-			if (IsKeyPressed(KEY_BACKSPACE) && !inBuffer.empty()) {
-				inBuffer.erase(inBuffer.end());
+			if (IsKeyPressed(KEY_BACKSPACE)) {
+				EraseCharSingleLineText(inputLine);
 			}
 		}
-		
+
 		// update data
 		int mx = GetMouseX(), my = GetMouseY();
 
 		if (IsDictionaryRowClicked(dict)) {
 			selectedRow = GetClickedDictionaryRow(dict);
-			rhalf = GetClickedDictionaryRowHalf(selectedRow);
+			if (edState == EditorStateLinkingVariable) { // link read or write nodes var 
+				if (selectedNode.type == read) {
+					LinkReadNodeVar((ReadNode*)selectedNode.address, &selectedRow->key, &selectedRow->value);
+				}
+				else if (selectedNode.type == write) {
+					LinkWriteNodeVar((WriteNode*)selectedNode.address, &selectedRow->value);
+				}
+			}
+			else {
+				rhalf = GetClickedDictionaryRowHalf(selectedRow);
+				if (rhalf.type != DictionaryRowHalfType_None) {
+					SetSingleLineTextPosition(inputLine, selectedRow->dict->window->x + selectedRow->dict->window->width + 5, selectedRow->y);
+					inputLine->focused = true;
+				}
+			}
 		}
 
 		DragWindow(createNodes);
@@ -201,13 +228,18 @@ int main() {
 			}
 		}
 
-		if (selectedNode.address != nullptr && IsButtonClicked(edit)) {
-			edState = EditorStateEditingNode;
-		}
-		if (selectedNode.address != nullptr && IsButtonClicked(del)) {
-			EraseNode(nodes, selectedNode);
-			selectedNode = { nullptr, noType };
-			edState = EditorStateNormal;
+		if (selectedNode.address != nullptr) {
+			if (IsButtonClicked(edit)) {
+				edState = EditorStateEditingNode;
+			}
+			if (IsButtonClicked(del)) {
+				EraseNode(nodes, selectedNode);
+				selectedNode = { nullptr, noType };
+				edState = EditorStateNormal;
+			}
+			if (IsButtonClicked(linkVar)) {
+				edState = EditorStateLinkingVariable;
+			}
 		}
 
 		if (IsButtonClicked(exec)) {
@@ -243,22 +275,25 @@ int main() {
 			}
 
 			if (IsKeyPressed(KEY_ENTER)) {
-				//x = stoi(inBuffer);
-				//SetValue((ReadNode*)currentNode.address, x);
+				int x = stoi(inBuffer);
+				ReadNode* p = (ReadNode*)currentNode.address;
+				SetReadNodeVarValue(p, x);
+				ResizeDictionaryRow(GetDictionaryRow(dict, *p->myVarName));
 				GetNextNodeInExecution(currentNode, state);
 			}
 		}
 		else if (state == processing) {
 			cout << "Processing\n";
 			if (currentNode.type == write) {
-				WriteValue((WriteNode*)currentNode.address);
+				cout << GetWriteNodeVarValue((WriteNode*)currentNode.address) << "\n";
 			}
 			GetNextNodeInExecution(currentNode, state);
 		}
 		else {
 			cout << "Done\n";
 			state = notExecuting;
-			outputString = "Result: " + to_string(*nodes.writeNodes[0]->myVar);
+			outputString = "Result: " + to_string(*nodes.writeNodes[0]->myVarValue);
+			currentNode = { nodes.startNode, start };
 		}
 
 		BeginDrawing();
@@ -271,33 +306,23 @@ int main() {
 		if (edState == EditorStateAddingLink) {
 			DrawGhostLink(selectedPin, mx, my);
 		}
-		if (edState == EditorStateSelectedNode || edState == EditorStateEditingNode|| edState == EditorStateAddingLink) {
-			DrawSelectedNodeOptions(selectedNode, del, edit);
+		if (edState != EditorStateNormal) {
+			DrawSelectedNodeOptions(selectedNode, del, edit, linkVar);
 		}
 
 		DrawNodes(nodes);
 
 		DrawButton(exec);
 
-		if (selectedRow != nullptr) {
-			int inBufX = selectedRow->dict->window->x + selectedRow->dict->window->width + 5, inBufY = selectedRow->y + selectedRow->padding;
-			int inBufW = MeasureText(inBuffer.c_str(), 20);
-			if (inBuffer.empty()) {
-				string placeholder = "Input here...";
-				DrawRectangle(inBufX, inBufY, MeasureText(placeholder.c_str(), 20), 20, {11, 11, 11, 155});
-				DrawText(placeholder.c_str(), inBufX, inBufY, 20, WHITE);
-			}
-			else {
-				DrawRectangle(inBufX, inBufY, inBufW, 20, { 11, 11, 11, 155 });
-				DrawText(inBuffer.c_str(), inBufX, inBufY, 20, WHITE);
-			}
-		}
-
 		if (state == waitingForInput) {
 			DrawText(inBuffer.c_str(), 100, 5, 20, WHITE);
 		}
 		else if (!outputString.empty()) {
 			DrawText(outputString.c_str(), 100, 5, 20, WHITE);
+		}
+
+		if (inputLine->focused) {
+			DrawSingleLineText(inputLine);
 		}
 
 		EndDrawing();
