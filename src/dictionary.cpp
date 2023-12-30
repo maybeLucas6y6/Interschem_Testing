@@ -182,6 +182,7 @@ int GetValueFromDictionary(Dictionary* dict, int index) {
 	if (index != -1) {
 		return dict->rows[index]->value;
 	}
+	return -1;
 }
 bool IsDictionaryHovered(Dictionary* dict) {
 	int mx = GetMouseX(), my = GetMouseY();

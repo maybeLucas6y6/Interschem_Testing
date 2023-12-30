@@ -10,10 +10,10 @@ using namespace std;
 enum EditorState {
 	EditorStateNormal,
 	EditorStateSelectedNode,
-	EditorStateAddingNode, // TODO:
+	EditorStateAddingNode,
 	EditorStateEditingNode,
 	EditorStateAddingLink,
-	EditorStateEditingLink, // TODO:
+	EditorStateEditingLink,
 	EditorStateLinkingVariable
 };
 
@@ -28,13 +28,13 @@ int main() {
 
 	Button* del = NewButton();
 	SetButtonColors(del, RED, WHITE);
-	SetButtonLabel(del, "X", 16, 5);
+	SetButtonLabel(del, "Delete", 16, 5);
 	Button* edit = NewButton();
 	SetButtonColors(edit, BLUE, WHITE);
-	SetButtonLabel(edit, "E", 16, 5);
+	SetButtonLabel(edit, "Edit", 16, 5);
 	Button* linkVar = NewButton();
 	SetButtonColors(linkVar, PURPLE, WHITE);
-	SetButtonLabel(linkVar, "L", 16, 5);
+	SetButtonLabel(linkVar, "Link", 16, 5);
 
 	Button* exec = NewButton();
 	SetButtonColors(exec, GREEN, BLACK);
@@ -86,9 +86,12 @@ int main() {
 	SetDictionaryRowData(r2, "ab", 44, 20, 5);
 	DictionaryRow* r3 = NewDictionaryRow();
 	SetDictionaryRowData(r3, "abd", 3, 20, 5);
+	DictionaryRow* r4 = NewDictionaryRow();
+	SetDictionaryRowData(r4, "bruh", 420, 20, 5);
 	AddDictionaryRow(dict, r1);
 	AddDictionaryRow(dict, r2);
 	AddDictionaryRow(dict, r3);
+	AddDictionaryRow(dict, r4);
 	SetDictionaryPadding(dict, 5);
 	SetDictionarySpacing(dict, 5);
 	Window* variables = NewWindow();
@@ -106,9 +109,23 @@ int main() {
 	SetSingleLineTextPadding(inputLine, 5);
 	SetSingleLineTextPosition(inputLine, 300, 5);
 
+	/*string testName = "Test";
+	int testVal = 5;
+	NewNode(nodes, assign, 5, 20, 400, 400);*/
+	//LinkAssignNodeVar(nodes.assignNodes[0], &testName, &testVal);
+
 	SetTargetFPS(120);
 	while (!WindowShouldClose()) {
 		//double t = GetTime();
+
+		if (IsKeyPressed(KEY_Q)) {
+			EvaluateAssignNode(nodes.assignNodes[0], dict);
+			//ResizeDictionaryRow(selectedRow);
+			//selectedRow = nullptr;
+		}
+		for (AssignNode* p : nodes.assignNodes) {
+			GetInputAssignNode(p);
+		}
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			if (IsSingleLineTextClicked(inputLine)) {
@@ -161,6 +178,10 @@ int main() {
 				}
 				else if (selectedNode.type == write) {
 					LinkWriteNodeVar((WriteNode*)selectedNode.address, &selectedRow->value);
+				}
+				else if (selectedNode.type == assign) {
+					LinkAssignNodeVar((AssignNode*)selectedNode.address, &selectedRow->key, &selectedRow->value);
+					SetAssignNodeExpression(nodes.assignNodes[0], "sin(3.1415/2)"); //TODO: move this
 				}
 			}
 			else {

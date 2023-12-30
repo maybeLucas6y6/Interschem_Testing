@@ -72,6 +72,9 @@
     <ClInclude Include="include\singlelinetext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\evalExpression.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -114,6 +117,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\singlelinetext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\evalExpression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

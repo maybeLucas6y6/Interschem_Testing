@@ -36,7 +36,7 @@ void SetWindowPosition(Window* win, int x, int y) {
 	win->x = x;
 	win->y = y;
 }
-void SetWindowPadding(Window* win, float padding) {
+void SetWindowPadding(Window* win, int padding) {
 	win->width -= 2 * win->padding;
 	win->width += 2 * padding;
 	float height = padding;
@@ -59,7 +59,7 @@ void SetWindowPadding(Window* win, float padding) {
 	win->height = height;
 	win->padding = padding;
 }
-void SetWindowSpacing(Window* win, float spacing) {
+void SetWindowSpacing(Window* win, int spacing) {
 	float height = win->padding;
 	for (WindowElement& e : win->elements) {
 		if (e.type == WindowElementTypeButton) {
