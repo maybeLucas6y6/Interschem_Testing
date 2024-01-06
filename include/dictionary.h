@@ -29,9 +29,11 @@ struct DictionaryRow {
 };
 
 struct Dictionary {
-	Window* window;
 	int x, y, width, height;
 	int padding, spacing;
+	bool visible;
+	Color bgColor;
+	Window* window;
 	std::vector<DictionaryRow*> rows; //TODO: or list, or map
 };
 
@@ -52,6 +54,7 @@ void SetDictionaryPosition(Dictionary* dict, int x, int y);
 int AddDictionaryRow(Dictionary* dict, DictionaryRow* drow);
 int FindKeyInDictionary(Dictionary* dict, std::string key);
 int GetValueFromDictionary(Dictionary* dict, int index);
+int GetValueFromDictionary(Dictionary* dict, std::string key);
 bool IsDictionaryHovered(Dictionary* dict);
 bool IsDictionaryClicked(Dictionary* dict);
 bool IsDictionaryRowClicked(Dictionary* dict);
@@ -59,6 +62,7 @@ DictionaryRow* GetClickedDictionaryRow(Dictionary* dict);
 DictionaryRow* GetDictionaryRow(Dictionary* dict, std::string key);
 void SetDictionaryPadding(Dictionary* dict, int padding);
 void SetDictionarySpacing(Dictionary* dict, int spacing);
+void SetDictionaryColor(Dictionary* dict, Color bgColor);
 void ReorderDictionary(Dictionary* dict, int index);
 void ResizeDictionary(Dictionary* dict);
 void DrawDictionary(Dictionary* dict);

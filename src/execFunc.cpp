@@ -1,6 +1,7 @@
 #include "execFunc.h"
 
 #include "button.h"
+#include <string>
 
 void GetClickedNode(AnyNodeType& clickedNode, int mx, int my, NodeArrays& nodes) {
 	if (nodes.startNode != nullptr) {
@@ -48,7 +49,7 @@ void GetClickedNode(AnyNodeType& clickedNode, int mx, int my, NodeArrays& nodes)
 
 	clickedNode = { nullptr, noType };
 }
-void GetNextNodeInExecution(AnyNodeType& currentNode, ExecutionState& state) {
+void GetNextNodeInExecution(AnyNodeType& currentNode, ExecutionState& state, Dictionary* dict, MultiLineText* console) {
 	if (currentNode.address == nullptr || currentNode.type == noType) {
 		state = done; // TODO: add error variant
 		return;
@@ -57,30 +58,37 @@ void GetNextNodeInExecution(AnyNodeType& currentNode, ExecutionState& state) {
 	switch (currentNode.type) {
 	case start:
 		currentNode.type = ((StartNode*)currentNode.address)->toPin->ownerType;
-		currentNode.address = ((StartNode*)currentNode.address)->toPin->owner;
+		currentNode.address = ((StartNode*)currentNode.address)->toPin->ownerPtr;
 		break;
 	case read:
 		currentNode.type = ((ReadNode*)currentNode.address)->toPin->ownerType;
-		currentNode.address = ((ReadNode*)currentNode.address)->toPin->owner;
+		currentNode.address = ((ReadNode*)currentNode.address)->toPin->ownerPtr;
 		break;
 	case write:
 		currentNode.type = ((WriteNode*)currentNode.address)->toPin->ownerType;
-		currentNode.address = ((WriteNode*)currentNode.address)->toPin->owner;
+		currentNode.address = ((WriteNode*)currentNode.address)->toPin->ownerPtr;
 		break;
-	case assign:
+	case assign: {
 		currentNode.type = ((AssignNode*)currentNode.address)->toPin->ownerType;
-		currentNode.address = ((AssignNode*)currentNode.address)->toPin->owner;
+		currentNode.address = ((AssignNode*)currentNode.address)->toPin->ownerPtr;
 		break;
-	case decision:
-		// TODO: 
-		// TODO: choose branch according to condition
+	}
+	case decision: {
+		int result = EvaluateDecisionNode((DecisionNode*)currentNode.address, dict);
 
-		//currentNode.type = ((DecisionNode*)currentNode.address)->toPinTrue->ownerType;
-		//currentNode.address = ((DecisionNode*)currentNode.address)->toPinTrue->owner;
-
-		//currentNode.type = ((DecisionNode*)currentNode.address)->toPinFalse->ownerType;
-		//currentNode.address = ((DecisionNode*)currentNode.address)->toPinFalse->owner;
+		if (result == 0) {
+			//TODO:
+		}
+		else if (result == 1) {
+			currentNode.type = ((DecisionNode*)currentNode.address)->toPinTrue->ownerType;
+			currentNode.address = ((DecisionNode*)currentNode.address)->toPinTrue->ownerPtr;
+		}
+		else {
+			currentNode.type = ((DecisionNode*)currentNode.address)->toPinFalse->ownerType;
+			currentNode.address = ((DecisionNode*)currentNode.address)->toPinFalse->ownerPtr;
+		}
 		break;
+	}
 	case stop: break;
 	default: break;
 	}
@@ -95,52 +103,10 @@ void GetNextNodeInExecution(AnyNodeType& currentNode, ExecutionState& state) {
 		state = processing;
 	}
 }
-void DrawSelectedNodeOptions(AnyNodeType& node, Button* del, Button* edit, Button* linkVar) { //TODO: asta n ar tb sa fie aici
-	int x = 0, y = 0, width = 0, height = 0;
-
-	if (node.type == start) {
-		StartNode* n = (StartNode*)node.address;
-		x = n->x;
-		y = n->y;
-		width = n->width;
-		height = n->height;
-	}
-	else if (node.type == read) {
-		ReadNode* n = (ReadNode*)node.address;
-		x = n->x;
-		y = n->y;
-		width = n->width;
-		height = n->height;
-	}
-	else if (node.type == write) {
-		WriteNode* n = (WriteNode*)node.address;
-		x = n->x;
-		y = n->y;
-		width = n->width;
-		height = n->height;
-	}
-	else if (node.type == assign) {
-		AssignNode* n = (AssignNode*)node.address;
-		x = n->x;
-		y = n->y;
-		width = n->width;
-		height = n->height;
-	}
-	else if (node.type == decision) {
-		DecisionNode* n = (DecisionNode*)node.address;
-		x = n->x;
-		y = n->y;
-		width = n->width;
-		height = n->height;
-	}
-	else {
-		StopNode* n = (StopNode*)node.address;
-		x = n->x;
-		y = n->y;
-		width = n->width;
-		height = n->height;
-	}
-
+void DrawSelectedNodeOptions(AnyNodeType& node, Button* del, Button* edit) { //TODO: asta n ar tb sa fie aici
+	int* pos = (int*)node.address;
+	int x = *pos, y = *(pos + 1), width = *(pos + 2), height = *(pos + 3);
+	
 	DrawRectangle(x - 2, y - 2, width + 4, height + 4, WHITE);
 
 	SetButtonPosition(del, x + width + 7, y + (height - del->height) / 2);
@@ -148,113 +114,220 @@ void DrawSelectedNodeOptions(AnyNodeType& node, Button* del, Button* edit, Butto
 
 	SetButtonPosition(edit, x + width + del->width + 12, y + (height - edit->height) / 2);
 	DrawButton(edit);
-
-	if (node.type == read || node.type == write || node.type == assign || node.type == decision) {
-		SetButtonPosition(linkVar, x + width + del->width + edit->width + 17, y + (height - del->height) / 2);
-		DrawButton(linkVar);
-	}
 }
-void DragNode(AnyNodeType& node, int mx, int my) {//TODO: asta n ar tb sa fie aici
+void DragNode(AnyNodeType& node, int dx, int dy) {//TODO: asta n ar tb sa fie aici
 	if (node.address == nullptr || node.type == noType) { // TODO: nu cred ca e necesar sa verifici
 		return;
 	}
-
+	int mx = GetMouseX(), my = GetMouseY();
 	if (node.type == start) {
-		SetStartNodePosition((StartNode*)node.address, mx, my);
+		SetStartNodePosition((StartNode*)node.address, mx + dx, my + dy);
 		return;
 	}
 	if (node.type == read) {
-		SetReadNodePosition((ReadNode*)node.address, mx, my);
+		SetReadNodePosition((ReadNode*)node.address, mx + dx, my + dy);
 		return;
 	}
 	if (node.type == write) {
-		SetWriteNodePosition((WriteNode*)node.address, mx, my);
+		SetWriteNodePosition((WriteNode*)node.address, mx + dx, my + dy);
 		return;
 	}
 	if (node.type == assign) {
-		SetAssignNodePosition((AssignNode*)node.address, mx, my);
+		SetAssignNodePosition((AssignNode*)node.address, mx + dx, my + dy);
 		return;
 	}
 	if (node.type == decision) {
-		SetDecisionNodePosition((DecisionNode*)node.address, mx, my);
+		SetDecisionNodePosition((DecisionNode*)node.address, mx + dx, my + dy);
 		return;
 	}
 	else {
-		SetStopNodePosition((StopNode*)node.address, mx, my);
+		SetStopNodePosition((StopNode*)node.address, mx + dx, my + dy);
 		return;
 	}
 }
-void GetClickedPin(Pin*& pin, int mx, int my, NodeArrays& nodes) {
+void GetClickedPin(Pin*& pin, NodeArrays& nodes) {
+	pin = nullptr;
 	Pin* p = nullptr;
+	int mx = GetMouseX(), my = GetMouseY();
+	int dx = 0, dy = 0;
+	int bestDist = ~(1 << 31);
+	int dist = 0;
 	if (nodes.startNode != nullptr) {
 		p = &nodes.startNode->outPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 	}
 	for (ReadNode* n : nodes.readNodes) {
 		p = &n->inPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 		p = &n->outPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 	}
 	for (WriteNode* n : nodes.writeNodes) {
 		p = &n->inPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 		p = &n->outPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 	}
 	for (AssignNode* n : nodes.assignNodes) {
 		p = &n->inPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 		p = &n->outPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 	}
 	for (DecisionNode* n : nodes.decisionNodes) {
 		p = &n->inPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 		p = &n->outPinTrue;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 		p = &n->outPinFalse;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 	}
 	for (StopNode* n : nodes.stopNodes) {
 		p = &n->inPin;
-		if (mx >= p->x && mx <= p->x + p->radius && my >= p->y && my <= p->y + p->radius) {
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
 			pin = p;
-			return;
 		}
 	}
-
-	pin = nullptr;
+}
+int GetBestDistToPin(NodeArrays& nodes, int x, int y) {
+	Pin* p = nullptr;
+	//int mx = GetMouseX(), my = GetMouseY();
+	int mx = x, my = y;
+	int dx = 0, dy = 0;
+	int bestDist = ~(1 << 31);
+	int dist = 0;
+	if (nodes.startNode != nullptr) {
+		p = &nodes.startNode->outPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+	}
+	for (ReadNode* n : nodes.readNodes) {
+		p = &n->inPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+		p = &n->outPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+	}
+	for (WriteNode* n : nodes.writeNodes) {
+		p = &n->inPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+		p = &n->outPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+	}
+	for (AssignNode* n : nodes.assignNodes) {
+		p = &n->inPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+		p = &n->outPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+	}
+	for (DecisionNode* n : nodes.decisionNodes) {
+		p = &n->inPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+		p = &n->outPinTrue;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+		p = &n->outPinFalse;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+	}
+	for (StopNode* n : nodes.stopNodes) {
+		p = &n->inPin;
+		dx = mx - p->x, dy = my - p->y;
+		dist = dx * dx + dy * dy;
+		if (dist <= 128 && dist < bestDist) {
+			bestDist = dist;
+		}
+	}
+	return bestDist;
 }
 void EraseNode(NodeArrays& nodes, AnyNodeType node) {
 	if (node.type == start) {
@@ -344,4 +417,37 @@ void EraseNodeLinks(NodeArrays& nodes, Pin* inPin) {
 			p->toPinFalse = nullptr;
 		}
 	}
+}
+void UpdateVariablesTable(NodeArrays& nodes, Dictionary* dict) {
+	for (ReadNode* node : nodes.readNodes) {
+		bool correctInput = isVariable(node->myVarName->str) && correctVariableName(node->myVarName->str);
+		if (correctInput) {
+			auto drow = GetDictionaryRow(dict, node->myVarName->str);
+			if (drow == nullptr) {
+				DictionaryRow* row = NewDictionaryRow();
+				SetDictionaryRowData(row, node->myVarName->str, 0, 20, 5);
+				AddDictionaryRow(dict, row);
+				SetDictionaryRowColors(row, { 0,0,0,100 }, RAYWHITE);
+			}
+		}
+		else {
+			//TODO:popup
+		}
+	}
+	for (AssignNode* node : nodes.assignNodes) {
+		bool correctInput = isVariable(node->myVarName->str) && correctVariableName(node->myVarName->str);
+		if (correctInput) {
+			auto drow = GetDictionaryRow(dict, node->myVarName->str);
+			if (drow == nullptr) {
+				DictionaryRow* row = NewDictionaryRow();
+				SetDictionaryRowData(row, node->myVarName->str, 0, 20, 5);
+				AddDictionaryRow(dict, row);
+				SetDictionaryRowColors(row, { 0,0,0,100 }, RAYWHITE);
+			}
+		}
+		else {
+			//TODO:popup
+		}
+	}
+	ResizeDictionary(dict);
 }
